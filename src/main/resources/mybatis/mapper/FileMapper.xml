@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.jiekeliu.springboofileup.mapper.FileMapper">
+    <select id="getFileAse" resultType="com.jiekeliu.springboofileup.pojo.File">
+        select * from pageindex.file order by fid asc limit #{start},#{pageSize}
+    </select>
+
+    <select id="getFileDesc" resultType="com.jiekeliu.springboofileup.pojo.File">
+         select * from pageindex.file order by fid desc limit #{start},#{pageSize}
+    </select>
+
+
+    <select id="checkFilename" parameterType="String" resultType="int">
+         select count(*) from pageindex.file where fileName=#{fileName}
+    </select>
+
+    <insert id="addFile" parameterType="com.jiekeliu.springboofileup.pojo.File">
+        INSERT INTO pageindex.file (fileName,fileDownloadUri,fileSize,fileType,fileDes,fileStatus) VALUES (#{fileName},#{fileDownloadUri},#{fileSize},#{fileType},#{fileDes},#{fileStatus})
+    </insert>
+
+    <delete id="delFileById" parameterType="int">
+        delete from pageindex.file where fid=#{fid}
+    </delete>
+
+    <select id="getFileCount" resultType="int">
+        select count(*) from pageindex.file
+    </select>
+
+</mapper>

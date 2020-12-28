@@ -1,8 +1,10 @@
 package com.jiekeliu.springboofileup.controller;
 
+import com.jiekeliu.springboofileup.service.FileService;
 import com.jiekeliu.springboofileup.service.FileUpload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -17,7 +19,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 
@@ -30,6 +34,8 @@ import java.util.stream.Collectors;
 @RestController
 public class FileUpAndDown {
 
+    @Autowired
+    FileService fileService;
 
     private static final Logger logger = LoggerFactory.getLogger(FileUpAndDown.class);
 
@@ -41,23 +47,46 @@ public class FileUpAndDown {
     }
 
     @PostMapping("/uploadFile")
-    public UploadFileResponse uploadFile(@RequestParam("file") MultipartFile file){
+    @CrossOrigin(origins = "*")
+    public Map uploadFile(@RequestParam("avatar") MultipartFile file){
         String fileName = storageService.storeFile(file);
+
+        int res_num = fileService.checkFilename(fileName);
+
+        if (res_num > 0){
+            HashMap<String, Object> responseInfo = new HashMap<>();
+            responseInfo.put("code",20000);
+            responseInfo.put("status","error");
+            responseInfo.put("info","添加失败,该文件已存在");
+            return responseInfo;
+        }
 
         String fileDownloadUri = ServletUriComponentsBuilder
                 .fromCurrentContextPath()
                 .path("/downloadFile/")
                 .path(fileName).toUriString();
 
-        return new UploadFileResponse(fileName,fileDownloadUri,file.getContentType(),file.getSize());
+        com.jiekeliu.springboofileup.pojo.File myfile = new com.jiekeliu.springboofileup.pojo.File();
+        myfile.setFileDes("");
+        myfile.setFileDownloadUri(fileDownloadUri);
+        myfile.setFileName(fileName);
+        myfile.setFileSize((double) file.getSize());
+        myfile.setFileType(file.getContentType());
+        myfile.setFileStatus(1);
+
+        Map add_res = fileService.addFile(myfile);
+
+        return add_res;
     }
 
     @PostMapping("/uploadMultipleFiles")
-    public List<UploadFileResponse> uploadMultipleFiles(@RequestParam("files") MultipartFile[] files){
+    @CrossOrigin(origins = "*")
+    public List<Map> uploadMultipleFiles(@RequestParam("files") MultipartFile[] files){
         return Arrays.stream(files).map(this::uploadFile).collect(Collectors.toList());
     }
 
     @GetMapping("/downloadFile/{fileName:.+}")
+    @CrossOrigin(origins = "*")
     public ResponseEntity<Resource> downloadFile(@PathVariable String fileName, HttpServletRequest request){
         Resource resource = storageService.loadFileAsResource(fileName);
 
@@ -81,6 +110,7 @@ public class FileUpAndDown {
      * 实现文件上传
      * */
     @PostMapping("fileUpload")
+    @CrossOrigin(origins = "*")
     public String fileUpload(@RequestParam("fileName") MultipartFile file) throws FileNotFoundException {
         if (file.isEmpty()) {
             return "false";
